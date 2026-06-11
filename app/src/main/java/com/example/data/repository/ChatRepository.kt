@@ -33,53 +33,86 @@ class ChatRepository(private val chatDao: ChatDao) {
         return@withContext emptyList()
     }
 
-    // Initialize Default Engines if database is empty
+    // Initialize Default Engines incrementally so updates don't require database clear
     suspend fun initializeDefaultEngines() = withContext(Dispatchers.IO) {
         val existing = chatDao.getAllEngineConfigs()
-        if (existing.isEmpty()) {
-            val defaults = listOf(
-                ApiEngineConfig(
-                    engineId = "gemini",
-                    displayName = "Google Gemini (Recomendado)",
-                    isEnabled = true,
-                    apiKey = "", // Uses BuildConfig.GEMINI_API_KEY as fallback if empty!
-                    apiBaseUrl = "v1beta/models/gemini-3.5-flash:generateContent",
-                    modelName = "gemini-3.5-flash",
-                    priority = 1,
-                    isBuiltIn = true
-                ),
-                ApiEngineConfig(
-                    engineId = "huggingface",
-                    displayName = "Hugging Face (Gratuito e Ilimitado)",
-                    isEnabled = true,
-                    apiKey = "", // Works without key or with user read token hf_...
-                    apiBaseUrl = "https://api-inference.huggingface.co/v1/chat/completions",
-                    modelName = "Qwen/Qwen2.5-72B-Instruct",
-                    priority = 2,
-                    isBuiltIn = true
-                ),
-                ApiEngineConfig(
-                    engineId = "groq",
-                    displayName = "Groq Cloud (Súper Rápido)",
-                    isEnabled = false, // Disabled by default, easily enabled by user with key
-                    apiKey = "",
-                    apiBaseUrl = "https://api.groq.com/openai/v1/chat/completions",
-                    modelName = "llama-3.3-70b-versatile",
-                    priority = 3,
-                    isBuiltIn = true
-                ),
-                ApiEngineConfig(
-                    engineId = "openrouter",
-                    displayName = "OpenRouter (Modelos Gratis $0)",
-                    isEnabled = false,
-                    apiKey = "",
-                    apiBaseUrl = "https://openrouter.ai/api/v1/chat/completions",
-                    modelName = "meta-llama/llama-3-8b-instruct:free",
-                    priority = 4,
-                    isBuiltIn = true
-                )
+        val existingIds = existing.map { it.engineId }.toSet()
+        val defaults = listOf(
+            ApiEngineConfig(
+                engineId = "gemini",
+                displayName = "Google Gemini 1.5 Flash (Créditos Gratis)",
+                isEnabled = true,
+                apiKey = "", // Uses BuildConfig.GEMINI_API_KEY as fallback if empty!
+                apiBaseUrl = "v1beta/models/gemini-3.5-flash:generateContent",
+                modelName = "gemini-3.5-flash",
+                priority = 1,
+                isBuiltIn = true
+            ),
+            ApiEngineConfig(
+                engineId = "pollinations-openai",
+                displayName = "GPT-4o (Gratis e Ilimitado)",
+                isEnabled = true,
+                apiKey = "", // Keyless!
+                apiBaseUrl = "https://text.pollinations.ai/openai/v1/chat/completions",
+                modelName = "openai",
+                priority = 2,
+                isBuiltIn = true
+            ),
+            ApiEngineConfig(
+                engineId = "pollinations-llama",
+                displayName = "Llama 3.1 70B (Gratis e Ilimitado)",
+                isEnabled = true,
+                apiKey = "", // Keyless!
+                apiBaseUrl = "https://text.pollinations.ai/openai/v1/chat/completions",
+                modelName = "llama",
+                priority = 3,
+                isBuiltIn = true
+            ),
+            ApiEngineConfig(
+                engineId = "pollinations-unity",
+                displayName = "Unity Coder (Gratis e Ilimitado)",
+                isEnabled = true,
+                apiKey = "", // Keyless!
+                apiBaseUrl = "https://text.pollinations.ai/openai/v1/chat/completions",
+                modelName = "unity",
+                priority = 4,
+                isBuiltIn = true
+            ),
+            ApiEngineConfig(
+                engineId = "huggingface",
+                displayName = "Hugging Face (Qwen 72B)",
+                isEnabled = true,
+                apiKey = "", // Works without key, or with HF token
+                apiBaseUrl = "https://api-inference.huggingface.co/v1/chat/completions",
+                modelName = "Qwen/Qwen2.5-72B-Instruct",
+                priority = 5,
+                isBuiltIn = true
+            ),
+            ApiEngineConfig(
+                engineId = "groq",
+                displayName = "Groq Cloud (Llama 3.3)",
+                isEnabled = false,
+                apiKey = "",
+                apiBaseUrl = "https://api.groq.com/openai/v1/chat/completions",
+                modelName = "llama-3.3-70b-versatile",
+                priority = 6,
+                isBuiltIn = true
+            ),
+            ApiEngineConfig(
+                engineId = "openrouter",
+                displayName = "OpenRouter (Modelos $0 gratis)",
+                isEnabled = false,
+                apiKey = "",
+                apiBaseUrl = "https://openrouter.ai/api/v1/chat/completions",
+                modelName = "meta-llama/llama-3-8b-instruct:free",
+                priority = 7,
+                isBuiltIn = true
             )
-            chatDao.insertEngineConfigs(defaults)
+        )
+        
+        val missingDefaults = defaults.filter { it.engineId !in existingIds }
+        if (missingDefaults.isNotEmpty()) {
+            chatDao.insertEngineConfigs(missingDefaults)
         }
     }
 
