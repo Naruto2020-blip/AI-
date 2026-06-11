@@ -1,0 +1,6 @@
+{
+  "name": "MultiAI Assistant",
+  "description": "Conversational AI Assistant with auto-fallback across multiple public API engines like Gemini, Hugging Face, Groq, and OpenRouter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
